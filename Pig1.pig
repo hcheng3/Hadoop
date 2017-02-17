@@ -1,0 +1,10 @@
+C = LOAD '/user/hadoop/inputCSV/customer.csv' using PigStorage(',') as (cid, cname, age, country, salary);
+T = LOAD '/user/hadoop/inputCSV/transaction.csv' using PigStorage(',') as (tid, cid, total, itemnum, des);
+trans_group = GROUP T by cid;
+trans_group_counter = foreach trans_group generate group as cid, COUNT(T) as transnum;
+trans_group_all = GROUP trans_group_counter ALL;
+trans_min = foreach trans_group_all generate trans_group_counter.cid as cid, MIN(trans_group_counter.transnum) as transnum;
+cid_filtered = filter trans_group_counter by transnum <= trans_min.transnum;
+customer_list = join C by cid, cid_filtered by cid;
+result = foreach customer_list generate cname, transnum;
+dump result;
